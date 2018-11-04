@@ -1,0 +1,271 @@
+#
+# VARCem	Virtual ARchaeological Computer EMulator.
+#		An emulator of (mostly) x86-based PC systems and devices,
+#		using the ISA,EISA,VLB,MCA  and PCI system buses, roughly
+#		spanning the era between 1981 and 1995.
+#
+#		This file is part of the VARCem Project.
+#
+#		Makefile for Debian (Jessie 8.9, 32bit) Linux.
+#
+#		Since many UNIX-ish systems share common stuff, this file is
+#		also a template for systems similar to Debian Linux and the
+#		GCC compiler. See the "PLAT" and "PLATDIR" definitions below.
+#
+# Version:	@(#)Makefile.linux	1.0.1	2018/11/02
+#
+# Author:	Fred N. van Kempen, <decwiz@yahoo.com>
+#
+#		Copyright 2017,2018 Fred N. van Kempen.
+#
+#		Redistribution and  use  in source  and binary forms, with
+#		or  without modification, are permitted  provided that the
+#		following conditions are met:
+#
+#		1. Redistributions of  source  code must retain the entire
+#		   above notice, this list of conditions and the following
+#		   disclaimer.
+#
+#		2. Redistributions in binary form must reproduce the above
+#		   copyright  notice,  this list  of  conditions  and  the
+#		   following disclaimer in  the documentation and/or other
+#		   materials provided with the distribution.
+#
+#		3. Neither the  name of the copyright holder nor the names
+#		   of  its  contributors may be used to endorse or promote
+#		   products  derived from  this  software without specific
+#		   prior written permission.
+#
+# THIS SOFTWARE  IS  PROVIDED BY THE  COPYRIGHT  HOLDERS AND CONTRIBUTORS
+# "AS IS" AND  ANY EXPRESS  OR  IMPLIED  WARRANTIES,  INCLUDING, BUT  NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+# PARTICULAR PURPOSE  ARE  DISCLAIMED. IN  NO  EVENT  SHALL THE COPYRIGHT
+# HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL,  EXEMPLARY,  OR  CONSEQUENTIAL  DAMAGES  (INCLUDING,  BUT  NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE  GOODS OR SERVICES;  LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON  ANY
+# THEORY OF  LIABILITY, WHETHER IN  CONTRACT, STRICT  LIABILITY, OR  TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+# Defaults for several build options (possibly defined in a chained file.)
+ifndef AUTODEP
+AUTODEP		:= n
+endif
+ifndef DEBUG
+DEBUG		:= n
+endif
+ifndef OPTIM
+OPTIM		:= n
+endif
+ifndef RELEASE
+RELEASE		:= n
+endif
+ifndef X64
+X64		:= n
+endif
+
+
+# Name of the executable.
+ifndef PROG
+ PROG		:= libslirp
+endif
+ifeq ($(DEBUG), y)
+ PROG		:= $(PROG)-d
+endif
+
+
+# Select the desired platform.
+PLAT		:= Linux
+PLATDEFS	:= -DLINUX -DPLAT=\"$(PLAT)\"
+PLATNAME	:= linux
+PLATDIR		:= unix
+
+
+#########################################################################
+#		Nothing should need changing from here on..		#
+#########################################################################
+VPATH           := $(EXPATH) . unix
+
+
+ifeq ($(X64), y)
+ CXX		:= g++ -m64
+ CC		:= gcc -m64
+else
+ CXX		:= g++ -m32
+ CC		:= gcc -m32
+endif
+PREPROC		:= cpp -P
+STRIP		:= strip
+DEPS		= -MMD -MF $*.d -c $<
+DEPFILE		:= $(PLATDIR)/.depends-$(PLATNAME)
+
+# Set up the correct toolchain flags.
+OPTS		:= -DUNIX $(PLATDEFS)
+ifdef BUILD
+ OPTS		+= -DBUILD=$(BUILD)
+endif
+ifdef COMMIT
+ OPTS		+= -DCOMMIT=0x$(COMMIT)
+endif
+ifdef EXFLAGS
+ OPTS		+= $(EXFLAGS)
+endif
+ifdef EXINC
+ OPTS		+= -I$(EXINC)
+endif
+ifeq ($(X64), y)
+ ifeq ($(OPTIM), y)
+  DFLAGS	:= -march=native
+ else
+  DFLAGS	:= 
+ endif
+else
+ ifeq ($(OPTIM), y)
+  DFLAGS	:= -march=native
+ else
+  DFLAGS	:= -march=i686
+ endif
+endif
+ifeq ($(DEBUG), y)
+ DFLAGS		+= -ggdb -D_DEBUG
+ AOPTIM		:=
+ ifndef COPTIM
+  COPTIM	:= -Og
+ endif
+else
+ ifeq ($(OPTIM), y)
+  AOPTIM	:= -mtune=native
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
+ else
+  ifndef COPTIM
+   COPTIM	:= -O3
+  endif
+ endif
+endif
+AFLAGS		:= -msse2 -mfpmath=sse
+LDFLAGS		:= -pthread   
+LIBS		:=
+
+# Fix up the flags based on selected features.
+ifeq ($(RELEASE), y)
+ OPTS		+= -DRELEASE_BUILD
+endif
+
+
+# Finalize the list of libraries to link in.
+LIBS		+= -ldl -lpthread -lgcc
+#ifneq ($(X64), y)
+#LIBS		+= -Wl,--large-address-aware
+#endif
+
+
+# Final versions of the toolchain flags.
+CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
+		   $(AFLAGS) -fomit-frame-pointer -mstackrealign -Wall \
+		   -Wno-unused-result
+
+CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
+		   $(AFLAGS) -fno-strict-aliasing -fvisibility=hidden \
+		   -Wall -Wundef -fvisibility-inlines-hidden \
+		   -Wunused-parameter -Wno-ctor-dtor-privacy \
+		   -Woverloaded-virtual
+
+
+#########################################################################
+#		Create the (final) list of objects to build.		#
+#########################################################################
+
+OBJ		:= slirp.o host.o misc.o poll.o \
+		    cksum.o if.o mbuf.o queue.o sbuf.o socket.o \
+		    debug.o stats.o \
+		    arp.o bootp.o \
+		    ip_icmp.o ip_input.o ip_output.o \
+		    tcp_input.o tcp_output.o tcp_subr.o tcp_timer.o \
+		    udp.o
+ifdef EXOBJ
+OBJ		+= $(EXOBJ)
+endif
+
+
+# Build module rules.
+ifeq ($(AUTODEP), y)
+%.o:		%.c
+		@echo $<
+		@$(CC) $(CFLAGS) $(DEPS) -c $<
+
+%.o:		%.cpp
+		@echo $<
+		@$(CXX) $(CXXFLAGS) $(DEPS) -c $<
+else
+%.o:		%.c
+		@echo $<
+		@$(CC) $(CFLAGS) -c $<
+
+%.i:		%.c
+		@echo $<
+		@$(PREPROC) $(CFLAGS) -P $<
+
+%.o:		%.cpp
+		@echo $<
+		@$(CXX) $(CXXFLAGS) -c $<
+
+%.d:		%.c $(wildcard $*.d)
+		@echo $<
+		@$(CC) $(CFLAGS) $(DEPS) -E $< >/dev/null
+
+%.d:		%.cpp $(wildcard $*.d)
+		@echo $<
+		@$(CXX) $(CXXFLAGS) $(DEPS) -E $< >/dev/null
+endif
+
+
+all:		$(PREBUILD) $(PROG).so $(POSTBUILD)
+
+
+$(PROG).so:	$(OBJ)
+		@echo Linking $(PROG).so
+		@$(CXX) $(LDFLAGS) -shared -o $(PROG).so $(OBJ) $(LIBS)
+#ifneq ($(DEBUG), y)
+#		@strip $(PROG).so
+#endif
+
+
+clean:
+		@echo Cleaning objects..
+		@-rm -f *.o 2>/dev/null
+
+clobber:	clean
+		@echo Cleaning executables..
+		@-rm -f *.d 2>/dev/null
+		@-rm -f $(PROG).so 2>/dev/null
+#		@-rm -f $(DEPFILE) 2>/dev/null
+
+ifneq ($(AUTODEP), y)
+depclean:
+		@-rm -f $(DEPFILE) 2>/dev/null
+		@echo Creating dependencies..
+		@echo # Run "make depends" to re-create this file. >$(DEPFILE)
+
+depends:	DEPOBJ=$(OBJ:%.o=%.d)
+depends:	depclean $(OBJ:%.o=%.d)
+		@-cat $(DEPOBJ) >>$(DEPFILE)
+		@-rm -f $(DEPOBJ)
+
+$(DEPFILE):
+endif
+
+
+# Module dependencies.
+ifeq ($(AUTODEP), y)
+#-include $(OBJ:%.o=%.d)  (better, but sloooowwwww)
+-include *.d
+else
+include $(wildcard $(DEPFILE))
+endif
+
+
+# End of Makefile.linux.

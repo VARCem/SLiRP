@@ -1,0 +1,37 @@
+#
+# Set up for native EOL's with automatic conversion for text files.
+#
+
+# Autodetect text files
+* text=auto
+
+# Definitively text files.
+*.txt text
+*.md text
+
+# Standard C source files.
+*.c text
+*.cc text
+*.cpp text
+*.h text
+
+# UNIX makefiles.
+makefile* text
+Makefile* text
+
+# MS Visual Studio diles.
+*.mpp text
+*.rc text
+*.props text
+*.vcxproj text
+*.vcxproj.user text
+*.vcxproj.filters text
+*.sln text
+
+# Binary files; ensure those won't be messed with.
+*.ico binary
+*.jpg binary
+*.png binary
+*.xpm binary
+
+# End of file.
