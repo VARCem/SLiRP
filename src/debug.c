@@ -63,7 +63,7 @@ lprint(const char *fmt, ...)
 void
 dump_packet(void *dat, int n)
 {
-    u_char *pptr = (u_char *)dat;
+    uint8_t *pptr = (uint8_t *)dat;
     int j, k;
 
     n /= 16;

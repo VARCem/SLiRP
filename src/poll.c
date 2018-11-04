@@ -6,7 +6,7 @@
 #ifdef _WIN32
 # include <windows.h>
 # ifdef _MSC_VER
-#  include <time.h>
+#  include <sys/timeb.h>
 # else
 #  include <sys/time.h>
 # endif
