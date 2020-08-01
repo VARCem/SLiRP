@@ -29,8 +29,8 @@
 #endif
 #define HAVE_SOCKET_H
 #define HAVE_INADDR_H
+#include "private.h"
 #include "slirp.h"
-#include "debug.h"              // merge with slirp.h
 #include "misc.h"               // merge with slirp.h
 #include "socket.h"
 #include "mbuf.h"

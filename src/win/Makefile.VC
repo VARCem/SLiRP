@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows using Visual Studio 2015.
 #
-# Version:	@(#)Makefile.VC	1.0.1	2018/11/04
+# Version:	@(#)Makefile.VC	1.0.2	2020/07/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017,2018 Fred N. van Kempen.
+#		Copyright 2018-2020 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -104,7 +104,7 @@ SYSINC		:=
 SYSLIB		:=
 
 DEPS		= -MMD -MF $*.d
-DEPFILE		:= win\msvc\.depends
+DEPFILE		:= win\.depends-msvc
 
 # Set up the correct toolchain flags.
 OPTS		:= $(VCOPTS) \

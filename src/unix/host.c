@@ -12,8 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 #define HAVE_INADDR_H
+#include "../private.h" 
 #include "../slirp.h"
-#include "../debug.h"
 
 
 int

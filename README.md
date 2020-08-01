@@ -41,4 +41,4 @@ BUILD STATUS
 ------------
 The auto-builds handled by Travis-CI are [![Build Status](https://travis-ci.org/VARCem/SLiRP.svg?branch=master)](https://travis-ci.org/VARCem/SLiRP)
 
-Last Updated: 11/04/2018
+Last Updated: 2020/07/17

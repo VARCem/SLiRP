@@ -6,17 +6,13 @@
 #
 #		This file is part of the VARCem Project.
 #
-#		Makefile for Debian (Jessie 8.9, 32bit) Linux.
+#		Makefile for UNIX and Linux systems using GCC.
 #
-#		Since many UNIX-ish systems share common stuff, this file is
-#		also a template for systems similar to Debian Linux and the
-#		GCC compiler. See the "PLAT" and "PLATDIR" definitions below.
-#
-# Version:	@(#)Makefile.linux	1.0.1	2018/11/02
+# Version:	@(#)Makefile.GCC	1.0.1	2020/07/29
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017,2018 Fred N. van Kempen.
+#		Copyright 2020 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -51,23 +47,17 @@
 
 # Defaults for several build options (possibly defined in a chained file.)
 ifndef AUTODEP
-AUTODEP		:= n
+ AUTODEP	:= n
 endif
 ifndef DEBUG
-DEBUG		:= n
-endif
-ifndef OPTIM
-OPTIM		:= n
-endif
-ifndef RELEASE
-RELEASE		:= n
+ DEBUG		:= n
 endif
 ifndef X64
-X64		:= n
+ X64		:= n
 endif
 
 
-# Name of the executable.
+# Name of the library.
 ifndef PROG
  PROG		:= libslirp
 endif
@@ -83,112 +73,82 @@ PLATNAME	:= linux
 PLATDIR		:= unix
 
 
+# Project settings.
+DEFS		:=
+POSTBUILD	:= install
+
+
 #########################################################################
 #		Nothing should need changing from here on..		#
 #########################################################################
-VPATH           := $(EXPATH) . unix
+VPATH		:= unix \
+		   .
 
 
+# Select the required build environment.
 ifeq ($(X64), y)
- CXX		:= g++ -m64
+ CPP		:= g++ -m64
  CC		:= gcc -m64
+ ARCH		:= x64
 else
- CXX		:= g++ -m32
+ CPP		:= g++ -m32
  CC		:= gcc -m32
+ ARCH		:= x86
 endif
-PREPROC		:= cpp -P
+PREPROC		:= cpp
+MCPP		:= cpp
+LINK		:= gcc
+AR		:= ar
+RANLIB		:= ranlib
 STRIP		:= strip
+
+SYSINC		:=
+SYSLIB		:=
+
 DEPS		= -MMD -MF $*.d -c $<
 DEPFILE		:= $(PLATDIR)/.depends-$(PLATNAME)
 
+
 # Set up the correct toolchain flags.
 OPTS		:= -DUNIX $(PLATDEFS)
-ifdef BUILD
- OPTS		+= -DBUILD=$(BUILD)
-endif
-ifdef COMMIT
- OPTS		+= -DCOMMIT=0x$(COMMIT)
-endif
-ifdef EXFLAGS
- OPTS		+= $(EXFLAGS)
-endif
-ifdef EXINC
- OPTS		+= -I$(EXINC)
-endif
-ifeq ($(X64), y)
- ifeq ($(OPTIM), y)
-  DFLAGS	:= -march=native
- else
-  DFLAGS	:= 
- endif
-else
- ifeq ($(OPTIM), y)
-  DFLAGS	:= -march=native
- else
-  DFLAGS	:= -march=i686
- endif
-endif
-ifeq ($(DEBUG), y)
- DFLAGS		+= -ggdb -D_DEBUG
- AOPTIM		:=
- ifndef COPTIM
-  COPTIM	:= -Og
- endif
-else
- ifeq ($(OPTIM), y)
-  AOPTIM	:= -mtune=native
-  ifndef COPTIM
-   COPTIM	:= -O3
-  endif
- else
-  ifndef COPTIM
-   COPTIM	:= -O3
-  endif
- endif
-endif
 AFLAGS		:= -msse2 -mfpmath=sse
-LDFLAGS		:= -pthread   
-LIBS		:=
-
-# Fix up the flags based on selected features.
-ifeq ($(RELEASE), y)
- OPTS		+= -DRELEASE_BUILD
+COPTS		:= -Wall
+CXXOPTS		:= -Wall
+DOPTS		:= 
+LOPTS		:=
+ifeq ($(DEBUG), y)
+ OPTS		+= -D_DEBUG
+ DOPTS		:= -Og -ggdb
+ ROPTS		+= -D_DEBUG
+else
+ DFLAGS		:= -O3
 endif
-
-
-# Finalize the list of libraries to link in.
-LIBS		+= -ldl -lpthread -lgcc
-#ifneq ($(X64), y)
-#LIBS		+= -Wl,--large-address-aware
-#endif
+LIBS		:= -lgcc #-lpthread
 
 
 # Final versions of the toolchain flags.
-CFLAGS		:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
-		   $(AFLAGS) -fomit-frame-pointer -mstackrealign -Wall \
-		   -Wno-unused-result
-
-CXXFLAGS	:= $(WX_FLAGS) $(OPTS) $(DFLAGS) $(COPTIM) $(AOPTIM) \
-		   $(AFLAGS) -fno-strict-aliasing -fvisibility=hidden \
-		   -Wall -Wundef -fvisibility-inlines-hidden \
-		   -Wunused-parameter -Wno-ctor-dtor-privacy \
-		   -Woverloaded-virtual
+LDFLAGS		:= -pthread $(LOPTS)
+CFLAGS		:= $(DEFS) $(OPTS) $(COPTS) $(DOPTS) \
+		   -fPIC -fno-strict-aliasing -fvisibility=hidden \
+		   -fomit-frame-pointer -mstackrealign -Wall -Wundef
+CXXFLAGS	:= -I/usr/include/c++/4.8.4 \
+		   $(DEFS) $(OPTS) $(CXXOPTS) $(COPTS) $(DOPTS) \
+		   -fPIC -fno-strict-aliasing -fvisibility=hidden \
+		   -fvisibility-inlines-hidden -Wall -Wundef -Wunused-parameter \
+		   -Wmissing-declarations -Wno-ctor-dtor-privacy -Woverloaded-virtual
 
 
 #########################################################################
 #		Create the (final) list of objects to build.		#
 #########################################################################
 
-OBJ		:= slirp.o host.o misc.o poll.o \
+LIBOBJS		:= slirp.o host.o misc.o poll.o \
 		    cksum.o if.o mbuf.o queue.o sbuf.o socket.o \
 		    debug.o stats.o \
 		    arp.o bootp.o \
 		    ip_icmp.o ip_input.o ip_output.o \
 		    tcp_input.o tcp_output.o tcp_subr.o tcp_timer.o \
 		    udp.o
-ifdef EXOBJ
-OBJ		+= $(EXOBJ)
-endif
 
 
 # Build module rules.
@@ -199,61 +159,71 @@ ifeq ($(AUTODEP), y)
 
 %.o:		%.cpp
 		@echo $<
-		@$(CXX) $(CXXFLAGS) $(DEPS) -c $<
+		@$(CPP) $(CXXFLAGS) $(DEPS) -c $<
 else
 %.o:		%.c
 		@echo $<
 		@$(CC) $(CFLAGS) -c $<
 
-%.i:		%.c
-		@echo $<
-		@$(PREPROC) $(CFLAGS) -P $<
-
 %.o:		%.cpp
 		@echo $<
-		@$(CXX) $(CXXFLAGS) -c $<
+		@$(CPP) $(CXXFLAGS) -c $<
 
 %.d:		%.c $(wildcard $*.d)
 		@echo $<
-		@$(CC) $(CFLAGS) $(DEPS) -E $< >/dev/null
+		@$(CC) $(CFLAGS) $(DEPS) -E $< >NUL
 
 %.d:		%.cpp $(wildcard $*.d)
 		@echo $<
-		@$(CXX) $(CXXFLAGS) $(DEPS) -E $< >/dev/null
+		@$(CPP) $(CXXFLAGS) $(DEPS) -E $< >NUL
 endif
 
 
-all:		$(PREBUILD) $(PROG).so $(POSTBUILD)
+all:		$(PREBUILD) $(PROG).so $(PROG).a $(POSTBUILD)
 
 
-$(PROG).so:	$(OBJ)
-		@echo Linking $(PROG).so
-		@$(CXX) $(LDFLAGS) -shared -o $(PROG).so $(OBJ) $(LIBS)
-#ifneq ($(DEBUG), y)
-#		@strip $(PROG).so
-#endif
+$(PROG).so:	$(LIBOBJS)
+		@echo Creating $(PROG).so
+		$(CC) $(LDFLAGS) -shared -o $(PROG).so $(LIBOBJS) $(LIBS)
 
+$(PROG).a:	$(LIBOBJS)
+		@echo Creating $(PROG).a
+		@$(AR) rv $(PROG).a $(LIBOBJS)
+		@$(RANLIB) $(PROG).a
+
+
+install:
+		@echo Installing SLiRP ..
+		@cp $(PROG).so $(PROG).a ../lib/$(ARCH)
+		@cp $(PROG).so ../bin/$(ARCH)
+		@cp $(PROG).so /usr/local/VARCem/lib
+		@cp slirp.h ../include
 
 clean:
 		@echo Cleaning objects..
-		@-rm -f *.o 2>/dev/null
+		@-rm -f *.o
+		@-rm -f *.res
 
 clobber:	clean
 		@echo Cleaning executables..
-		@-rm -f *.d 2>/dev/null
-		@-rm -f $(PROG).so 2>/dev/null
-#		@-rm -f $(DEPFILE) 2>/dev/null
+		@-rm -f *.d
+		@-rm -f *.dll
+		@-rm -f *.exe
+ifeq ($(PROFILER), y)
+		@-rm -f *.map
+endif
+#		@-rm -f $(DEPFILE)
 
 ifneq ($(AUTODEP), y)
 depclean:
-		@-rm -f $(DEPFILE) 2>/dev/null
+		@-rm -f $(DEPFILE)
 		@echo Creating dependencies..
 		@echo # Run "make depends" to re-create this file. >$(DEPFILE)
 
 depends:	DEPOBJ=$(OBJ:%.o=%.d)
 depends:	depclean $(OBJ:%.o=%.d)
-		@-cat $(DEPOBJ) >>$(DEPFILE)
-		@-rm -f $(DEPOBJ)
+		@$(CAT) $(DEPOBJ) >>$(DEPFILE)
+#		@-rm -f $(DEPOBJ)
 
 $(DEPFILE):
 endif
@@ -268,4 +238,4 @@ include $(wildcard $(DEPFILE))
 endif
 
 
-# End of Makefile.linux.
+# End of Makefile.GCC.

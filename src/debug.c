@@ -10,38 +10,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include "private.h"
+#define HAVE_STDARG_H
 #include "slirp.h"
-#include "debug.h"              // merge with slirp.h
 
 
 static	log_func_t	log_func = NULL;
-FILE	*dfd = NULL;
+FILE			*dfd = NULL;
 #ifdef _DEBUG
-int	dostats = 1;
+int			dostats = 1;
 #else
-int	dostats = 0;
+int			dostats = 0;
 #endif
-int	dbglvl = 0;
-
-
-void
-debug_init(char *file, int dbg)
-{
-    /* Close the old debugging file */
-    if (dfd)
-	fclose(dfd);
-
-    /* Reset logger function. */
-    log_func = NULL;
-
-    dfd = fopen(file, "w");
-    if (dfd != NULL) {
-	dbglvl = dbg;
-
-	fprintf(dfd, "Debugging Started level %i.\n", dbglvl);
-	fflush(dfd);
-    }
-}
+int			dbglvl = 0;
 
 
 void
@@ -79,12 +60,38 @@ dump_packet(void *dat, int n)
 #endif
 
 
-/* API: set logging output function to caller. */
-void
-slirp_debug(log_func_t func)
+_SLIRP_API void
+debug_init(const char *fn, int level)
 {
-    log_func = func;
+    /* Close the old debugging file */
+    if (dfd != NULL)
+	(void)fclose(dfd);
+
+    /* Reset logger function. */
+    log_func = NULL;
+
+    dfd = fopen(fn, "w");
+    if (dfd != NULL) {
+	if (level != -1)
+		dbglvl = level;
+
+	fprintf(dfd, "SLiRP: debugging (level %i) started.\n", dbglvl);
+	fflush(dfd);
+    }
+}
+
+
+/* API: set logging output function to caller. */
+_SLIRP_API void
+slirp_debug(int level, log_func_t func)
+{
+    if (func != NULL)
+	log_func = func;
+
+    if (level != -1)
+	dbglvl = level;
 
     /* Feedback to indicate logging is set up. */
-    lprint("SLiRP: debug level %i\n", dbglvl);
+    if (dbglvl > 0)
+	lprint("SLiRP: debug level %i\n", dbglvl);
 }

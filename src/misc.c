@@ -18,8 +18,8 @@
 # include <arpa/inet.h>
 # include <unistd.h>
 #endif
+#include "private.h"
 #include "slirp.h"
-#include "debug.h"              // merge with slirp.h
 
 
 //#if SIZEOF_CHAR_P == 8

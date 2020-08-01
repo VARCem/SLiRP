@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "private.h"
 #include "slirp.h"
-#include "debug.h"              // merge with slirp.h
 #include "misc.h"               // merge with slirp.h
 #include "mbuf.h"
 #include "if.h"

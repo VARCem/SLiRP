@@ -6,13 +6,13 @@
  *
  *		This file is part of the VARCem Project.
  *
- *		Application resource script for Windows.
+ *		Define support library version and build info.
  *
- * Version:	@(#)libslirp.rc	1.0.9	2020/07/17
+ * Version:	@(#)version.h	1.0.2	2020/07/29
  *
  * Author:	Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *		Copyright 2018-2020 Fred N. van Kempen.
+ *		Copyright 2020 Fred N. van Kempen.
  *
  *		Redistribution and  use  in source  and binary forms, with
  *		or  without modification, are permitted  provided that the
@@ -44,55 +44,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING  IN ANY  WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <windows.h>
-#include "../version.h"
+#ifndef LIB_VERSION_H
+# define LIB_VERSION_H
 
 
-100		ICON	DISCARDABLE	"win/icons/varcem.ico"
+/* Library name. */
+#define LIB_NAME	"LibSLiRP"
+
+/* Version info. */
+#define LIB_VER_MAJOR	1
+#define LIB_VER_MINOR	0
+#define LIB_VER_REV	9
+#define LIB_VER_PATCH	2
 
 
-VS_VERSION_INFO VERSIONINFO
-#ifdef LIB_VER_PATCH
- FILEVERSION	LIB_VER_MAJOR,LIB_VER_MINOR,LIB_VER_REV,LIB_VER_PATCH
- PRODUCTVERSION	LIB_VER_MAJOR,LIB_VER_MINOR,LIB_VER_REV,LIB_VER_PATCH
+/* Standard C preprocessor macros. */
+#define STR_STRING(x)	#x
+#define STR(x)		STR_STRING(x)
+#define STR_RC(a,e)	a ## , ## e
+
+
+/* These are used in the application. */
+#define LIB_VER_NUM	LIB_VER_MAJOR.LIB_VER_MINOR.LIB_VER_REV
+#if defined(LIB_VER_PATCH) && LIB_VER_PATCH > 0
+# define LIB_VER_NUM_4	LIB_VER_MAJOR.LIB_VER_MINOR.LIB_VER_REV.LIB_VER_PATCH
 #else
- FILEVERSION	LIB_VER_MAJOR,LIB_VER_MINOR,LIB_VER_REV,0
- PRODUCTVERSION	LIB_VER_MAJOR,LIB_VER_MINOR,LIB_VER_REV,0
+# define LIB_VER_NUM_4	LIB_VER_MAJOR.LIB_VER_MINOR.LIB_VER_REV.0
 #endif
- FILEFLAGSMASK	0x3fL
-#ifndef RELEASE_BUILD
-# ifdef _DEBUG
- FILEFLAGS	VS_FF_SPECIALBUILD | VS_FF_DEBUG
-# else
- FILEFLAGS	VS_FF_SPECIALBUILD
-# endif
-#else
-# ifdef _DEBUG
- FILEFLAGS	VS_FF_DEBUG
-# else
- FILEFLAGS	0x0L
-# endif
-#endif
- FILEOS		VOS_NT_WINDOWS32
- FILETYPE	VFT_DLL
- FILESUBTYPE	0x0L
- BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "0409fde9"
-        BEGIN
-            VALUE "CompanyName", "The VARCem Team, Fred N. van Kempen"
-            VALUE "FileDescription", "SLiRP - Host Network Interface"
-            VALUE "FileVersion", LIB_VERSION
-            VALUE "InternalName", LIB_NAME
-            VALUE "LegalCopyright", "Copyright 2018-2020 Fred N. van Kempen"
-            VALUE "OriginalFilename", "libslirp.dll"
-            VALUE "ProductName", "SLiRP Interface Library"
-            VALUE "ProductVersion", LIB_VERSION
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x0409, 65001
-    END
-END
+#define LIB_VERSION	STR(LIB_VER_NUM)
+#define LIB_VERSION_4	STR(LIB_VER_NUM_4)
+
+
+#endif	/*LIB_VERSION_H*/

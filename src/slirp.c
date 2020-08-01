@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "private.h"
 #include "slirp.h"
-#include "debug.h"		// merge with slirp.h
 #include "host.h"
 #include "mbuf.h"
 #include "if.h"
@@ -20,6 +20,7 @@
 #ifdef USE_REDIR
 # include "redir.h"
 #endif
+#include "version.h"
 
 
 /* Our actual addresses. */
@@ -47,12 +48,12 @@ u_int		detach_wait = 600000;	/* 10 minutes */
 
 
 /* API: return the library version. */
-int
+_SLIRP_API int
 slirp_version(char *bufp, int max_len)
 {
     char temp[128];
 
-    sprintf(temp, "%s", SLIRP_VERSION);
+    sprintf(temp, "%s", LIB_VERSION_4);
 
     strncpy(bufp, temp, max_len);
 
@@ -61,7 +62,7 @@ slirp_version(char *bufp, int max_len)
 
 
 /* API: initialize an instance for use. */
-slirp_t *
+_SLIRP_API slirp_t *
 slirp_init(void)
 {
     slirp_t *slirp;
@@ -148,7 +149,7 @@ slirp_init(void)
 
 
 /* API: close an instance, and release all resources. */
-void
+_SLIRP_API void
 slirp_close(slirp_t *slirp)
 {
     if (slirp != NULL)
@@ -160,7 +161,7 @@ slirp_close(slirp_t *slirp)
 
 
 /* API: receive a packet from the inbound queue. */
-int
+_SLIRP_API int
 slirp_recv(slirp_t *slirp, uint8_t *bufp)
 {
     return 0;
@@ -168,14 +169,14 @@ slirp_recv(slirp_t *slirp, uint8_t *bufp)
 
 
 /* API: send a packet to the outbound interface. */
-int
+_SLIRP_API int
 slirp_send(slirp_t *slirp, uint8_t *bufp, int pkt_len)
 {
     return 0;
 }
 
 
-void
+_SLIRP_API void
 slirp_input(const uint8_t *pkt, int pkt_len)
 {
     struct SLIRPmbuf *m;
@@ -269,7 +270,7 @@ slirp_exit(int exit_status)
 
 
 /* Needed by SLiRP library. */
-void
+_SLIRP_API void
 slirp_output(const uint8_t *pkt, int pkt_len)
 {
 #if 0
@@ -286,7 +287,7 @@ slirp_output(const uint8_t *pkt, int pkt_len)
 
 
 /* Needed by SLiRP library. */
-int
+_SLIRP_API int
 slirp_can_output(void)
 {
 //    return((slirp != NULL)?1:0);

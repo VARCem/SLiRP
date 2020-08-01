@@ -18,8 +18,8 @@
 # include <arpa/inet.h>
 # include <unistd.h>
 #endif
+#include "private.h"
 #include "slirp.h"
-#include "debug.h"              // merge with slirp.h
 #include "mbuf.h"
 #include "if.h"
 #include "socket.h"

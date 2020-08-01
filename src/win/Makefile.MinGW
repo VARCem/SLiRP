@@ -8,11 +8,11 @@
 #
 #		Makefile for Windows systems using the MinGW32 environment.
 #
-# Version:	@(#)Makefile.mingw	1.0.1	2018/11/02
+# Version:	@(#)Makefile.mingw	1.0.2	2020/07/17
 #
 # Author:	Fred N. van Kempen, <decwiz@yahoo.com>
 #
-#		Copyright 2017,2018 Fred N. van Kempen.
+#		Copyright 2018-2020 Fred N. van Kempen.
 #
 #		Redistribution and  use  in source  and binary forms, with
 #		or  without modification, are permitted  provided that the
@@ -114,17 +114,20 @@ else
   CC		:= gcc -m32
  endif
  PREPROC	:= cpp
+ AR		:= ar
+ RANLIB		:= ranlib
+ STRIP		:= strip
  WINDRES	:= windres
  ifndef CAT
   CAT		:= cat
  endif
 
- SYSINC		:= -Iwin/mingw/include
+ SYSINC		:=
  SYSLIB		:=
 endif
 
 DEPS		= -MMD -MF $*.d -c $<
-DEPFILE		:= win/mingw/.depends
+DEPFILE		:= win/.depends-mingw
 
 # Set up the correct toolchain flags.
 OPTS		:= -D_CRT_NON_CONFORMING_SWPRINTFS \
@@ -132,22 +135,6 @@ OPTS		:= -D_CRT_NON_CONFORMING_SWPRINTFS \
 AFLAGS		:= -msse2 -mfpmath=sse
 RFLAGS		:= --input-format=rc -O coff
 LDFLAGS		:=
-ifdef BUILD
- OPTS		+= -DBUILD=$(BUILD)
-endif
-ifdef COMMIT
- OPTS		+= -DCOMMIT=0x$(COMMIT)
-endif
-ifdef UPSTREAM
- OPTS		+= -DUPSTREAM=0x$(UPSTREAM)
-endif
-ifdef EXFLAGS
- OPTS		+= $(EXFLAGS)
-endif
-ifdef EXINC
- OPTS		+= -I$(EXINC)
-endif
- OPTS		+= $(SYSINC)
 ifneq ($(CROSS), n)
   OPTS		+= -DUSE_CROSS
 endif
@@ -183,18 +170,11 @@ else
   endif
  endif
 endif
-ifeq ($(RELEASE), y)
- OPTS		+= -DRELEASE_BUILD
- RFLAGS		+= -DRELEASE_BUILD
-endif
 
 LIBS		:= -mwindows \
 		   -lversion -lcomctl32 -lwinmm
 LIBS		+= -lws2_32 -lwsock32 -liphlpapi -lpsapi
 LIBS		+= -static -lgcc
-#ifneq ($(X64), y)
-# LIBS		+= -Wl,--large-address-aware
-#endif
 
 
 # Final versions of the toolchain flags.
@@ -254,7 +234,7 @@ else
 endif
 
 
-all:		$(PREBUILD) $(PROG).dll $(POSTBUILD)
+all:		$(PREBUILD) $(PROG).dll $(PROG).a $(POSTBUILD)
 
 
 $(PROG).res:	win/libslirp.rc
@@ -264,10 +244,16 @@ $(PROG).res:	win/libslirp.rc
 $(PROG).dll:	$(OBJ) $(PROG).res
 		@echo Linking $(PROG).dll ..
 		@$(CC) $(LDFLAGS) -shared -o $@ \
+			-Wl,--out-implib,$(PROG).dll.a \
 			$(OBJ) $(PROG).res $(LIBS)
-#ifneq ($(DEBUG), y)
-#		@strip $(PROG).dll
-#endif
+ifneq ($(DEBUG), y)
+		@strip --strip-unneeded $(PROG).dll
+endif
+
+$(PROG).a:	$(OBJ)
+		@echo Creating $(PROG).a ..
+		@$(AR) rv $(PROG).a $(OBJ)
+		@$(RANLIB) $(PROG).a
 
 
 clean:
@@ -278,11 +264,9 @@ clean:
 clobber:	clean
 		@echo Cleaning executables..
 		@-rm -f *.d
+		@-rm -f *.a
 		@-rm -f *.dll
 		@-rm -f *.exe
-ifeq ($(PROFILER), y)
-		@-rm -f *.map
-endif
 #		@-rm -f $(DEPFILE)
 
 ifneq ($(AUTODEP), y)
